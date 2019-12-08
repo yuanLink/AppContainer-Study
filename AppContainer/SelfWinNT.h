@@ -1,7 +1,7 @@
 #pragma once
 
-#include<windows.h>
-#include<iostream>
+#include <windows.h>
+#include <iostream>
 #include <winternl.h>
 
 //
@@ -70,6 +70,56 @@ NTSTATUS NTAPI NtCreateLowBoxToken(
 	PSID_AND_ATTRIBUTES Capabilities,
 	ULONG HandleCount,
 	PHANDLE Handles
+);
+
+/*
+Routine Description:
+
+	This function allocates and initializes a sid with the specified
+	number of sub-authorities (up to 8).  A sid allocated with this
+	routine must be freed using RtlFreeSid().
+
+	THIS ROUTINE IS CURRENTLY NOT CALLABLE FROM KERNEL MODE.
+
+Arguments:
+
+	IdentifierAuthority - Pointer to the Identifier Authority value to
+		set in the SID.
+
+	SubAuthorityCount - The number of sub-authorities to place in the SID.
+		This also identifies how many of the SubAuthorityN parameters
+		have meaningful values.  This must contain a value from 0 through
+		8.
+
+	SubAuthority0-7 - Provides the corresponding sub-authority value to
+		place in the SID.  For example, a SubAuthorityCount value of 3
+		indicates that SubAuthority0, SubAuthority1, and SubAuthority0
+		have meaningful values and the rest are to be ignored.
+
+	Sid - Receives a pointer to the SID data structure to initialize.
+
+Return Value:
+
+	STATUS_SUCCESS - The SID has been allocated and initialized.
+
+	STATUS_NO_MEMORY - The attempt to allocate memory for the SID
+		failed.
+
+	STATUS_INVALID_SID - The number of sub-authorities specified did
+		not fall in the valid range for this api (0 through 8).
+*/
+NTSYSAPI NTSTATUS RtlAllocateAndInitializeSid(
+	PSID_IDENTIFIER_AUTHORITY IdentifierAuthority,
+	UCHAR                     SubAuthorityCount,
+	ULONG                     SubAuthority0,
+	ULONG                     SubAuthority1,
+	ULONG                     SubAuthority2,
+	ULONG                     SubAuthority3,
+	ULONG                     SubAuthority4,
+	ULONG                     SubAuthority5,
+	ULONG                     SubAuthority6,
+	ULONG                     SubAuthority7,
+	PSID                      *Sid
 );
 
 //NTSTATUS RtlConvertSidToUnicodeString(

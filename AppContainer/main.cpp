@@ -3,11 +3,19 @@
 #include <sddl.h>
 #include <UserEnv.h>
 
+#pragma comment(lib,"Userenv")
+#pragma comment(lib,"Shlwapi")
+#pragma comment(lib,"kernel32")
+#pragma comment(lib,"user32")
+#pragma comment(lib,"Advapi32")
+#pragma comment(lib,"Ole32")
+
 decltype(NtOpenDirectoryObject) *PFNNtOpenDirectoryObject;
 decltype(NtQueryInformationToken) *PFNNtQueryInformationToken;
 decltype(NtQuerySecurityObject) *PFNNtQuerySecurityObject;
 decltype(RtlConvertSidToUnicodeString) *PFNRtlConvertSidToUnicodeString;
 decltype(RtlInitUnicodeString) *PFNRtlInitUnicodeString;
+decltype(RtlAllocateAndInitializeSid) *PFNRtlAllocateAndInitializeSid;
 
 bool InitEssantialFunciton() {
 	HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
@@ -20,11 +28,13 @@ bool InitEssantialFunciton() {
 	PFNNtQuerySecurityObject = SelfGetProcAddress<decltype(NtQuerySecurityObject)*>(hNtdll, "NtQuerySecurityObject");
 	PFNRtlConvertSidToUnicodeString = SelfGetProcAddress<decltype(RtlConvertSidToUnicodeString)*>(hNtdll, "RtlConvertSidToUnicodeString");
 	PFNRtlInitUnicodeString = SelfGetProcAddress<decltype(RtlInitUnicodeString)*>(hNtdll, "RtlInitUnicodeString");
+	PFNRtlAllocateAndInitializeSid = SelfGetProcAddress<decltype(RtlAllocateAndInitializeSid)*>(hNtdll, "RtlAllocateAndInitializeSid");
 	if (!PFNNtOpenDirectoryObject ||
 		!PFNNtQueryInformationToken ||
 		!PFNNtQuerySecurityObject ||
 		!PFNRtlConvertSidToUnicodeString ||
-		!PFNRtlInitUnicodeString)
+		!PFNRtlInitUnicodeString || 
+		!PFNRtlAllocateAndInitializeSid)
 		return false;
 	return true;
 }

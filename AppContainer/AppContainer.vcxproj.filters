@@ -21,18 +21,21 @@
     <ClInclude Include="SelfWinNT.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="AppContainer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="AppContainer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="restricted_token.cc">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="AppContainer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
