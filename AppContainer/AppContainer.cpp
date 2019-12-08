@@ -3,10 +3,14 @@
 #define CHECKRTL \
 if (!NT_SUCCESS(status)) { \
 	std::cout << "Error with error code " << std::hex << status << std::endl;\
-	return -1; \
+	goto END; \
 }
 
+SID_IDENTIFIER_AUTHORITY SIA_NT = SECURITY_NT_AUTHORITY;
+
 extern decltype(RtlAllocateAndInitializeSid) *PFNRtlAllocateAndInitializeSid;
+extern decltype(RtlFreeSid) *PFNRtlFreeSid;
+
 NTSTATUS WINAPI BuildAppContainerSecurityDescriptor(
 	_In_ PSECURITY_DESCRIPTOR ExistingSecurityDescriptor,
 	_In_ PSID SandBoxSid,
@@ -44,6 +48,12 @@ NTSTATUS WINAPI BuildAppContainerSecurityDescriptor(
 	status = PFNRtlAllocateAndInitializeSid(
 		&SIA_NT, 1, SECURITY_WORLD_RID,
 		0, 0, 0, 0, 0, 0, 0, &pWorldSid);
+	CHECKRTL
 
+		
+END:
+	PFNRtlFreeSid(pWorldSid);
+	PFNRtlFreeSid(pAdminSID);
+	PFNRtlFreeSid(pRestrictedSid);
 	return false;
 }

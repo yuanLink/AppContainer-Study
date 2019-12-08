@@ -1,4 +1,5 @@
 #include "SelfWinNT.h"
+#include "AppContainer.h"
 #include <strsafe.h>
 #include <sddl.h>
 #include <UserEnv.h>
@@ -16,6 +17,7 @@ decltype(NtQuerySecurityObject) *PFNNtQuerySecurityObject;
 decltype(RtlConvertSidToUnicodeString) *PFNRtlConvertSidToUnicodeString;
 decltype(RtlInitUnicodeString) *PFNRtlInitUnicodeString;
 decltype(RtlAllocateAndInitializeSid) *PFNRtlAllocateAndInitializeSid;
+decltype(RtlFreeSid) *PFNRtlFreeSid;
 
 bool InitEssantialFunciton() {
 	HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
@@ -29,12 +31,14 @@ bool InitEssantialFunciton() {
 	PFNRtlConvertSidToUnicodeString = SelfGetProcAddress<decltype(RtlConvertSidToUnicodeString)*>(hNtdll, "RtlConvertSidToUnicodeString");
 	PFNRtlInitUnicodeString = SelfGetProcAddress<decltype(RtlInitUnicodeString)*>(hNtdll, "RtlInitUnicodeString");
 	PFNRtlAllocateAndInitializeSid = SelfGetProcAddress<decltype(RtlAllocateAndInitializeSid)*>(hNtdll, "RtlAllocateAndInitializeSid");
+	PFNRtlFreeSid = SelfGetProcAddress<decltype(RtlFreeSid)*>(hNtdll, "RtlFreeSid");
 	if (!PFNNtOpenDirectoryObject ||
 		!PFNNtQueryInformationToken ||
 		!PFNNtQuerySecurityObject ||
 		!PFNRtlConvertSidToUnicodeString ||
 		!PFNRtlInitUnicodeString || 
-		!PFNRtlAllocateAndInitializeSid)
+		!PFNRtlAllocateAndInitializeSid || 
+		!PFNRtlFreeSid)
 		return false;
 	return true;
 }

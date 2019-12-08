@@ -108,7 +108,7 @@ Return Value:
 	STATUS_INVALID_SID - The number of sub-authorities specified did
 		not fall in the valid range for this api (0 through 8).
 */
-NTSYSAPI NTSTATUS RtlAllocateAndInitializeSid(
+NTSYSAPI NTSTATUS NTAPI RtlAllocateAndInitializeSid(
 	PSID_IDENTIFIER_AUTHORITY IdentifierAuthority,
 	UCHAR                     SubAuthorityCount,
 	ULONG                     SubAuthority0,
@@ -122,6 +122,9 @@ NTSYSAPI NTSTATUS RtlAllocateAndInitializeSid(
 	PSID                      *Sid
 );
 
+NTSYSAPI PVOID NTAPI RtlFreeSid(
+	PSID Sid
+);
 //NTSTATUS RtlConvertSidToUnicodeString(
 //	PUNICODE_STRING UnicodeString,
 //	PSID            Sid,

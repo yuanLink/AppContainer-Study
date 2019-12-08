@@ -1,0 +1,1 @@
+#define CHECKRTL if (!NT_SUCCESS(status)) { std::cout << "Error with error code " << std::hex << status << std::endl; goto END; }
