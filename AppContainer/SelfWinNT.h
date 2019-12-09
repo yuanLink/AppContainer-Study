@@ -36,6 +36,9 @@
 #define DIRECTORY_CREATE_SUBDIRECTORY 0x0008
 #define DIRECTORY_ALL_ACCESS STANDARD_RIGHTS_REQUIRED | 0xF
 
+#define SYMBOLIC_LINK_QUERY 0x0001
+#define SYMBOLIC_LINK_ALL_ACCESS (STANDARD_RIGHTS_REQUIRED | 0x1)
+
 NTSTATUS
 NTAPI
 NtOpenDirectoryObject(
@@ -60,16 +63,147 @@ NtOpenDirectoryObject(
 	PULONG               LengthNeeded
 );
 
-NTSTATUS NTAPI NtCreateLowBoxToken(
-	PHANDLE LowBoxTokenHandle,
-	HANDLE TokenHandle,
+ NTSYSAPI NTSTATUS NTAPI RtlGetDaclSecurityDescriptor(
+	 PSECURITY_DESCRIPTOR SecurityDescriptor,
+	 PBOOLEAN             DaclPresent,
+	 PACL                 *Dacl,
+	 PBOOLEAN             DaclDefaulted
+ );
+
+NTSYSAPI ULONG NTAPI RtlLengthSid(
+	 PSID Sid
+ );
+
+NTSYSAPI NTSTATUS NTAPI RtlCreateAcl(
+	PACL  Acl,
+	ULONG AclLength,
+	ULONG AclRevision
+);
+
+NTSYSAPI NTSTATUS NTAPI RtlGetAce(
+	PACL  Acl,
+	ULONG AceIndex,
+	PVOID *Ace
+);
+
+NTSYSAPI PSID_IDENTIFIER_AUTHORITY NTAPI RtlIdentifierAuthoritySid(
+	PSID Sid
+);
+
+NTSYSAPI PUCHAR NTAPI RtlSubAuthorityCountSid(
+	PSID Sid
+);
+
+NTSYSAPI PULONG NTAPI RtlSubAuthoritySid(
+	PSID  Sid,
+	ULONG SubAuthority
+);
+
+NTSYSAPI BOOLEAN NTAPI RtlEqualSid(
+	PSID Sid1,
+	PSID Sid2
+);
+
+NTSYSAPI NTSTATUS NTAPI RtlAddAce(
+	PACL  Acl,
+	ULONG AceRevision,
+	ULONG StartingAceIndex,
+	PVOID AceList,
+	ULONG AceListLength
+);
+
+NTSYSAPI NTSTATUS NTAPI RtlAddAccessAllowedAce(
+	PACL        Acl,
+	ULONG       AceRevision,
+	ACCESS_MASK AccessMask,
+	PSID        Sid
+);
+
+NTSYSAPI NTSTATUS NTAPI RtlAddAccessAllowedAceEx(
+	PACL        Acl,
+	ULONG       AceRevision,
+	ULONG       AceFlags,
+	ACCESS_MASK AccessMask,
+	PSID        Sid
+);
+
+NTSYSAPI NTSTATUS NTAPI RtlCreateSecurityDescriptor(
+	PSECURITY_DESCRIPTOR SecurityDescriptor,
+	ULONG                Revision
+);
+
+NTSYSAPI NTSTATUS NTAPI RtlSetDaclSecurityDescriptor(
+	PSECURITY_DESCRIPTOR SecurityDescriptor,
+	BOOLEAN              DaclPresent,
+	PACL                 Dacl,
+	BOOLEAN              DaclDefaulted
+);
+
+#if (PHNT_VERSION >= PHNT_WIN8)
+NTSTATUS
+NTAPI
+NtCreateDirectoryObjectEx(
+	_Out_ PHANDLE DirectoryHandle,
+	_In_ ACCESS_MASK DesiredAccess,
+	_In_ POBJECT_ATTRIBUTES ObjectAttributes,
+	_In_ HANDLE ShadowDirectoryHandle,
+	_In_ ULONG Flags
+);
+#endif
+
+NTSTATUS NTAPI NtDuplicateObject(
+	HANDLE      SourceProcessHandle,
+	HANDLE      SourceHandle,
+	HANDLE      TargetProcessHandle,
+	PHANDLE     TargetHandle,
 	ACCESS_MASK DesiredAccess,
-	OBJECT_ATTRIBUTES * ObjectAttributes,
-	PSID PackageSid,
-	ULONG CapabilityCount,
-	PSID_AND_ATTRIBUTES Capabilities,
-	ULONG HandleCount,
-	PHANDLE Handles
+	ULONG       HandleAttributes,
+	ULONG       Options
+);
+
+NTSTATUS NTAPI 	RtlAddMandatoryAce(
+	_Inout_ PACL Acl,
+	_In_ ULONG AceRevision,
+	_In_ ULONG AceFlags,
+	_In_ PSID Sid,
+	_In_ UCHAR AceType,
+	_In_ ACCESS_MASK AccessMask
+);
+
+NTSTATUS NTAPI RtlSetSaclSecurityDescriptor(
+	_Inout_ PSECURITY_DESCRIPTOR 	SecurityDescriptor,
+	_In_ BOOLEAN 	SaclPresent,
+	_In_opt_ PACL 	Sacl,
+	_In_opt_ BOOLEAN 	SaclDefaulted
+);
+
+NTSTATUS NTAPI NtSetSecurityObject(
+	HANDLE               Handle,
+	SECURITY_INFORMATION SecurityInformation,
+	PSECURITY_DESCRIPTOR SecurityDescriptor
+);
+
+NTSTATUS NTAPI NtClose(
+	IN HANDLE Handle
+);
+
+NTSTATUS NTAPI NtCreateSymbolicLinkObject(
+	OUT PHANDLE             pHandle,
+	IN ACCESS_MASK          DesiredAccess,
+	IN POBJECT_ATTRIBUTES   ObjectAttributes,
+	IN PUNICODE_STRING      DestinationName
+);
+
+NTSTATUS NTAPI NtCreateLowBoxToken(
+	_Out_ PHANDLE TokenHandle,
+	_In_ HANDLE ExistingTokenHandle,
+	_In_ ACCESS_MASK DesiredAccess,
+	_In_opt_ POBJECT_ATTRIBUTES ObjectAttributes,
+	_In_ PSID PackageSid,
+	_In_ ULONG CapabilityCount,
+	_In_reads_opt_(CapabilityCount) PSID_AND_ATTRIBUTES Capabilities,
+	_In_ ULONG HandleCount,
+	_In_reads_opt_(HandleCount) HANDLE *Handles
 );
 
 /*

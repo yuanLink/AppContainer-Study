@@ -3,6 +3,7 @@
 #include <strsafe.h>
 #include <sddl.h>
 #include <UserEnv.h>
+#include <Shlwapi.h>
 
 #pragma comment(lib,"Userenv")
 #pragma comment(lib,"Shlwapi")
@@ -16,8 +17,30 @@ decltype(NtQueryInformationToken) *PFNNtQueryInformationToken;
 decltype(NtQuerySecurityObject) *PFNNtQuerySecurityObject;
 decltype(RtlConvertSidToUnicodeString) *PFNRtlConvertSidToUnicodeString;
 decltype(RtlInitUnicodeString) *PFNRtlInitUnicodeString;
+decltype(RtlFreeUnicodeString) *PFNRtlFreeUnicodeString;
 decltype(RtlAllocateAndInitializeSid) *PFNRtlAllocateAndInitializeSid;
 decltype(RtlFreeSid) *PFNRtlFreeSid;
+decltype(RtlGetDaclSecurityDescriptor) *PFNRtlGetDaclSecurityDescriptor;
+decltype(RtlLengthSid) *PFNRtlLengthSid;
+decltype(RtlCreateAcl) *PFNRtlCreateAcl;
+decltype(RtlGetAce) *PFNRtlGetAce;
+decltype(RtlIdentifierAuthoritySid) *PFNRtlIdentifierAuthoritySid;
+decltype(RtlSubAuthorityCountSid) *PFNRtlSubAuthorityCountSid;
+decltype(RtlSubAuthoritySid) *PFNRtlSubAuthoritySid;
+decltype(RtlEqualSid) *PFNRtlEqualSid;
+decltype(RtlAddAce) *PFNRtlAddAce;
+decltype(RtlAddAccessAllowedAce) *PFNRtlAddAccessAllowedAce;
+decltype(RtlAddAccessAllowedAceEx) *PFNRtlAddAccessAllowedAceEx;
+decltype(RtlCreateSecurityDescriptor) *PFNRtlCreateSecurityDescriptor;
+decltype(RtlSetDaclSecurityDescriptor) *PFNRtlSetDaclSecurityDescriptor;
+decltype(NtCreateDirectoryObjectEx) *PFNNtCreateDirectoryObjectEx;
+decltype(NtDuplicateObject) *PFNNtDuplicateObject;
+decltype(RtlAddMandatoryAce) *PFNRtlAddMandatoryAce;
+decltype(RtlSetSaclSecurityDescriptor) *PFNRtlSetSaclSecurityDescriptor;
+decltype(NtSetSecurityObject) *PFNNtSetSecurityObject;
+decltype(NtClose) *PFNNtClose;
+decltype(NtCreateSymbolicLinkObject) *PFNNtCreateSymbolicLinkObject;
+decltype(NtCreateLowBoxToken) *PFNNtCreateLowBoxToken;
 
 bool InitEssantialFunciton() {
 	HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
@@ -30,18 +53,70 @@ bool InitEssantialFunciton() {
 	PFNNtQuerySecurityObject = SelfGetProcAddress<decltype(NtQuerySecurityObject)*>(hNtdll, "NtQuerySecurityObject");
 	PFNRtlConvertSidToUnicodeString = SelfGetProcAddress<decltype(RtlConvertSidToUnicodeString)*>(hNtdll, "RtlConvertSidToUnicodeString");
 	PFNRtlInitUnicodeString = SelfGetProcAddress<decltype(RtlInitUnicodeString)*>(hNtdll, "RtlInitUnicodeString");
+	PFNRtlFreeUnicodeString = SelfGetProcAddress<decltype(RtlFreeUnicodeString)*>(hNtdll, "RtlFreeUnicodeString");
 	PFNRtlAllocateAndInitializeSid = SelfGetProcAddress<decltype(RtlAllocateAndInitializeSid)*>(hNtdll, "RtlAllocateAndInitializeSid");
 	PFNRtlFreeSid = SelfGetProcAddress<decltype(RtlFreeSid)*>(hNtdll, "RtlFreeSid");
+	PFNRtlGetDaclSecurityDescriptor = SelfGetProcAddress<decltype(RtlGetDaclSecurityDescriptor)*>(hNtdll, "RtlGetDaclSecurityDescriptor");
+	PFNRtlLengthSid = SelfGetProcAddress<decltype(RtlLengthSid)*>(hNtdll, "RtlLengthSid");
+	PFNRtlCreateAcl = SelfGetProcAddress<decltype(RtlCreateAcl)*>(hNtdll, "RtlCreateAcl");
+	PFNRtlGetAce = SelfGetProcAddress<decltype(RtlGetAce)*>(hNtdll, "RtlGetAce");
+	PFNRtlIdentifierAuthoritySid = SelfGetProcAddress<decltype(RtlIdentifierAuthoritySid)*>(hNtdll, "RtlIdentifierAuthoritySid");
+	PFNRtlSubAuthorityCountSid = SelfGetProcAddress<decltype(RtlSubAuthorityCountSid)*>(hNtdll, "RtlSubAuthorityCountSid");
+	PFNRtlSubAuthoritySid = SelfGetProcAddress<decltype(RtlSubAuthoritySid)*>(hNtdll, "RtlSubAuthoritySid");
+	PFNRtlEqualSid = SelfGetProcAddress<decltype(RtlEqualSid)*>(hNtdll, "RtlEqualSid");
+	PFNRtlAddAce = SelfGetProcAddress<decltype(RtlAddAce)*>(hNtdll, "RtlAddAce");
+	PFNRtlAddAccessAllowedAce = SelfGetProcAddress<decltype(RtlAddAccessAllowedAce)*>(hNtdll, "RtlAddAccessAllowedAce");
+	PFNRtlAddAccessAllowedAceEx = SelfGetProcAddress<decltype(RtlAddAccessAllowedAceEx)*>(hNtdll, "RtlAddAccessAllowedAceEx");
+	PFNRtlCreateSecurityDescriptor = SelfGetProcAddress<decltype(RtlCreateSecurityDescriptor)*>(hNtdll, "RtlCreateSecurityDescriptor");
+	PFNRtlSetDaclSecurityDescriptor = SelfGetProcAddress<decltype(RtlSetDaclSecurityDescriptor)*>(hNtdll, "RtlSetDaclSecurityDescriptor");
+	PFNNtCreateDirectoryObjectEx = SelfGetProcAddress<decltype(NtCreateDirectoryObjectEx)*>(hNtdll, "NtCreateDirectoryObjectEx");
+	PFNNtDuplicateObject = SelfGetProcAddress<decltype(NtDuplicateObject)*>(hNtdll, "NtDuplicateObject");
+	PFNRtlAddMandatoryAce = SelfGetProcAddress<decltype(RtlAddMandatoryAce)*>(hNtdll, "RtlAddMandatoryAce");
+	PFNRtlSetSaclSecurityDescriptor = SelfGetProcAddress<decltype(RtlSetSaclSecurityDescriptor)*>(hNtdll, "RtlSetSaclSecurityDescriptor");
+	PFNNtSetSecurityObject = SelfGetProcAddress<decltype(NtSetSecurityObject)*>(hNtdll, "NtSetSecurityObject");
+	PFNNtClose = SelfGetProcAddress<decltype(NtClose)*>(hNtdll, "NtClose");
+	PFNNtCreateSymbolicLinkObject = SelfGetProcAddress<decltype(NtCreateSymbolicLinkObject)*>(hNtdll, "NtCreateSymbolicLinkObject");
+	PFNNtCreateLowBoxToken = SelfGetProcAddress<decltype(NtCreateLowBoxToken)*>(hNtdll, "NtCreateLowBoxToken");
+
 	if (!PFNNtOpenDirectoryObject ||
 		!PFNNtQueryInformationToken ||
 		!PFNNtQuerySecurityObject ||
 		!PFNRtlConvertSidToUnicodeString ||
 		!PFNRtlInitUnicodeString || 
 		!PFNRtlAllocateAndInitializeSid || 
-		!PFNRtlFreeSid)
+		!PFNRtlFreeSid ||
+		!PFNRtlGetDaclSecurityDescriptor ||
+		!PFNRtlLengthSid || 
+		!PFNRtlCreateAcl || 
+		!PFNRtlGetAce ||
+		!PFNRtlIdentifierAuthoritySid ||
+		!PFNRtlSubAuthorityCountSid ||
+		!PFNRtlSubAuthoritySid || 
+		!PFNRtlEqualSid || 
+		!PFNRtlAddAce || 
+		!PFNRtlAddAccessAllowedAce ||
+		!PFNRtlCreateSecurityDescriptor ||
+		!PFNRtlSetDaclSecurityDescriptor ||
+		!PFNNtCreateDirectoryObjectEx ||
+		!PFNNtDuplicateObject || 
+		!PFNRtlAddMandatoryAce || 
+		!PFNRtlSetSaclSecurityDescriptor ||
+		!PFNNtSetSecurityObject ||
+		!PFNNtClose ||
+		!PFNNtCreateLowBoxToken)
 		return false;
 	return true;
 }
+
+const enum AppContainerHandleList
+{
+	RootDirectory,			// main directory
+	RpcDirectory,			// RPC object directory
+	GlobalSymbolicLink,		// Global symbolic link (essantial)
+	LocalSymbolicLink,		// Local symbolic link (essantial)
+	SessionSymbolicLink,	// Session symbolic link
+	NamedPipe				// Named pipe symblic
+};
 
 NTSTATUS CreateSelfAppContainerToken(
 	_Out_ PHANDLE TokenHandle,
@@ -52,12 +127,27 @@ NTSTATUS CreateSelfAppContainerToken(
 	NTSTATUS status = 0;
 	DWORD dwTokenSessionID = 0;
 	DWORD dwRetLength = 0;
-	UNICODE_STRING usAppContainerSID, usBNO;
+	UNICODE_STRING usAppContainerSID, usRootDirectory, usBNO, usACNO;
 	WCHAR Buffer[MAX_PATH] = { 0 };
 	OBJECT_ATTRIBUTES ObjAttr;
-	HANDLE hBaseNamedObjects;
+	HANDLE hBaseNamedObjects = nullptr, hAppContainerNamedObjects = nullptr, hRpcControl = nullptr;
+	HANDLE HandleList[6] = { nullptr };
 	PTOKEN_USER pUserTokenInfo = nullptr;
-	PSECURITY_DESCRIPTOR pSecurityDescriptor = nullptr;
+	PSECURITY_DESCRIPTOR pSecurityDescriptor = nullptr, pDirectorySD = nullptr, pRpcControlSD = nullptr;
+
+	UNICODE_STRING usRpcControl;
+	UNICODE_STRING usRpcControl2;
+	UNICODE_STRING usGlobal;
+	UNICODE_STRING usLocal;
+	UNICODE_STRING usSession;
+	UNICODE_STRING usBNO1;
+
+	PFNRtlInitUnicodeString(&usRpcControl, L"\\RPC Control");
+	PFNRtlInitUnicodeString(&usRpcControl2, L"RPC Control");
+	PFNRtlInitUnicodeString(&usGlobal, L"Global");
+	PFNRtlInitUnicodeString(&usLocal, L"Local");
+	PFNRtlInitUnicodeString(&usSession, L"Session");
+	PFNRtlInitUnicodeString(&usBNO1, L"\\BaseNamedObjects");
 
 	status = PFNNtQueryInformationToken(
 		ExistingTokenHandle,
@@ -78,6 +168,7 @@ NTSTATUS CreateSelfAppContainerToken(
 		goto CLEAN;
 	}
 
+	// Init Session BaseNamedObjects path
 	if (dwTokenSessionID != 0) {
 		StringCbPrintfW(Buffer, sizeof(Buffer), L"\\Sessions\\%ld\\BaseNamedObjects", dwTokenSessionID);
 		PFNRtlInitUnicodeString(&usBNO, Buffer);
@@ -141,15 +232,234 @@ NTSTATUS CreateSelfAppContainerToken(
 		goto CLEAN;
 	}
 
+	// Create AppContainer Security Descriptor for directory
+	status = BuildAppContainerSecurityDescriptor(
+		pSecurityDescriptor,
+		SecurityCapabilities->AppContainerSid,
+		pUserTokenInfo->User.Sid,
+		false,
+		&pDirectorySD
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "BuildAppContainerSecurityDescriptor failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
 
+	// Create AppContainer Security Descriptor for rpc control
+	status = BuildAppContainerSecurityDescriptor(
+		pSecurityDescriptor,
+		SecurityCapabilities->AppContainerSid,
+		pUserTokenInfo->User.Sid,
+		true,
+		&pRpcControlSD
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "BuildAppContainerSecurityDescriptor(RPC) failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	ZeroMemory(Buffer, sizeof(Buffer));
+
+	// Init AppContainerNamedObjects ID
+	StringCbPrintfW(Buffer, sizeof(Buffer), L"\\Sessions\\%ld\\AppContainerNamedObjects", dwTokenSessionID);
+	PFNRtlInitUnicodeString(&usACNO, Buffer);
+
+	// Opep nthe AppContainer Path
+	InitializeObjectAttributes(&ObjAttr, &usACNO, 0, NULL, NULL);
+	status = PFNNtOpenDirectoryObject(
+		&hAppContainerNamedObjects,
+		DIRECTORY_QUERY | DIRECTORY_TRAVERSE |
+		DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+		&ObjAttr
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "NtOpenDirectoryObject failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	// 1. Creaet AppContaier Directory Object
+	// Create AppContainer Directory Object
+	InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, pDirectorySD);
+
+	status = PFNNtCreateDirectoryObjectEx(
+		&HandleList[AppContainerHandleList::RootDirectory],
+		DIRECTORY_QUERY | DIRECTORY_TRAVERSE |
+		DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+		&ObjAttr,
+		hBaseNamedObjects,
+		1
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Creaet AppContaier Directory Object failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	//Set AppContainer Integrity Level to low
+	status = SetKernelObjectIntegrityLevel(
+		HandleList[AppContainerHandleList::RootDirectory],
+		TOKEN_INTEGRITY_LEVELS_LIST::LowLevel
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Creaet AppContaier Low level failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	// 2. Create RPC Control Directory Object
+	// First initialize \\RpcControl to open this handle
+	InitializeObjectAttributes(&ObjAttr, &usRpcControl, 0, NULL, NULL);
+	status = PFNNtOpenDirectoryObject(
+		&hRpcControl,
+		DIRECTORY_QUERY | DIRECTORY_TRAVERSE,
+		&ObjAttr
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Open RPC failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	// Initialize the AppContainer RPC Control Directory OBJECT_ATTRIBUTES for create Directory handle
+	InitializeObjectAttributes(
+		&ObjAttr, &usRpcControl2,
+		OBJ_INHERIT | OBJ_OPENIF,
+		HandleList[AppContainerHandleList::RootDirectory],
+		pRpcControlSD);
+	
+	status = PFNNtCreateDirectoryObjectEx(
+		&HandleList[AppContainerHandleList::RpcDirectory],
+		DIRECTORY_QUERY | DIRECTORY_TRAVERSE |
+		DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+		&ObjAttr,
+		hRpcControl,
+		1);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Create Directory RPC Control failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	status = SetKernelObjectIntegrityLevel(
+		HandleList[AppContainerHandleList::RpcDirectory],
+		TOKEN_INTEGRITY_LEVELS_LIST::LowLevel);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Create Directory RPC Low Level failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	ZeroMemory(Buffer, sizeof(Buffer));
+	// 3/4. AppContainerNamedObjects Global/Local Symbolic Link Initialize (with sid)
+	// [VERY IMPORTANT HERE]!!!!!!!!!!
+	// Open Symbolic Path to create global symbolic
+	StringCbPrintfW(
+		Buffer, sizeof(Buffer),
+		L"\\Sessions\\%d\\AppContainerNamedObjects\\%ws",
+		TokenSessionId,
+		usAppContainerSID.Buffer, usAppContainerSID.Length);
+	PFNRtlInitUnicodeString(&usRootDirectory, Buffer);
+
+	InitializeObjectAttributes(
+		&ObjAttr,
+		&usGlobal,
+		OBJ_INHERIT | OBJ_OPENIF,
+		HandleList[AppContainerHandleList::RootDirectory],
+		pDirectorySD
+	);
+
+	// AppContainer create Global symbolic object
+	// it will like: Name->Global Type->SymbolicLink SymLink->\BaseNamedObjects
+	status = PFNNtCreateSymbolicLinkObject(
+		&HandleList[AppContainerHandleList::GlobalSymbolicLink],
+		SYMBOLIC_LINK_ALL_ACCESS,
+		&ObjAttr,
+		&usBNO1
+	);
+
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Create Global Link failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	InitializeObjectAttributes(
+		&ObjAttr,
+		&usLocal,
+		OBJ_INHERIT | OBJ_OPENIF,
+		HandleList[AppContainerHandleList::RootDirectory],
+		pDirectorySD
+	);
+
+	// AppContainer create Local symbolic object
+	// it will like: Name->Local Type->SymbolicLink SymLink->\Session\sessionID\AppContainerNamedObjects\S-1-4-5-6-7--...
+	status = PFNNtCreateSymbolicLinkObject(
+		&HandleList[AppContainerHandleList::LocalSymbolicLink],
+		SYMBOLIC_LINK_ALL_ACCESS,
+		&ObjAttr,
+		&usRootDirectory
+	);
+
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Create Local Link  failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	// 5. Initialize SessionHandle
+	InitializeObjectAttributes(
+		&ObjAttr,
+		&usSession,
+		OBJ_INHERIT | OBJ_OPENIF,
+		HandleList[AppContainerHandleList::RootDirectory],
+		pDirectorySD
+	);
+
+	// AppContainer create session symbolic link object
+	// it will look like Local Symboliclink
+	status = PFNNtCreateSymbolicLinkObject(
+		&HandleList[AppContainerHandleList::SessionSymbolicLink],
+		SYMBOLIC_LINK_ALL_ACCESS,
+		&ObjAttr,
+		&usRootDirectory);
+
+	if (!NT_SUCCESS(status)) {
+		std::cout << "Create Local Link  failed with error :" << std::hex << status << std::endl;
+		goto CLEAN;
+	}
+
+	// 6. Initailize Pipe Line
+	// Try to SKIP
+	// MAY CAUSE BUG
+
+	// Create AppContainer Low Box Token
+	InitializeObjectAttributes(&ObjAttr, NULL, NULL, 0, 0);
+
+	status = PFNNtCreateLowBoxToken(
+		TokenHandle,
+		ExistingTokenHandle,
+		MAXIMUM_ALLOWED,
+		&ObjAttr,
+		SecurityCapabilities->AppContainerSid,
+		SecurityCapabilities->CapabilityCount,
+		SecurityCapabilities->Capabilities,
+		0,
+		HandleList
+	);
 
 CLEAN:
-	if (pSecurityDescriptor != nullptr) {
-		LocalFree(pSecurityDescriptor);
+	for (int i = 0; i < 5; i++) {
+		PFNNtClose(HandleList[i]);
+	}
+	PFNNtClose(hRpcControl);
+	PFNNtClose(hAppContainerNamedObjects);
+	if (pRpcControlSD != nullptr) {
+		LocalFree(pRpcControlSD);
+	}
+	if (pDirectorySD != nullptr) {
+		LocalFree(pDirectorySD);
 	}
 	if (pUserTokenInfo != nullptr) {
 		LocalFree(pUserTokenInfo);
 	}
+	if (pSecurityDescriptor != nullptr) {
+		LocalFree(pSecurityDescriptor);
+	}
+	PFNRtlFreeUnicodeString(&usAppContainerSID);
+
 	return status;
 }
 
@@ -165,10 +475,11 @@ int main() {
 	if (!InitEssantialFunciton()) {
 		return -1;
 	}
-	HANDLE hLowBoxToken;
+	HANDLE hLowBoxToken = nullptr;
 	HANDLE hCPHandle = GetCurrentProcessToken();
+	HANDLE hRealCPHandle = nullptr;
 	SECURITY_CAPABILITIES SecurityCapabilities;
-	SID_AND_ATTRIBUTES CapabilitiesList[10];
+	SID_AND_ATTRIBUTES CapabilitiesList[3];
 	for (int i = 0; i < sizeof(capabilitiyTypeList) / sizeof(WELL_KNOWN_SID_TYPE); i++)
 	{
 		DWORD dwSIDSize = SECURITY_MAX_SID_SIZE;
@@ -182,14 +493,14 @@ int main() {
 		}
 	}
 
-	WCHAR wszAppContainerName[] = L"TestLowBox";
+	WCHAR wszAppContainerName[] = L"TestLowBox12";
 	PSID pAppContainerSID = nullptr;
 	DWORD retValue = 0;
 	retValue = CreateAppContainerProfile(
 		wszAppContainerName,
 		wszAppContainerName,
 		wszAppContainerName,
-		NULL, 0,
+		nullptr, 0,
 		&pAppContainerSID);
 	if (retValue != S_OK) {
 		if (HRESULT_FROM_WIN32(ERROR_ALREADY_EXISTS) == retValue){
@@ -200,8 +511,9 @@ int main() {
 			return -1;
 		}
 	}
-	SecurityCapabilities = { pAppContainerSID, CapabilitiesList, 10 ,0 };
-	CreateSelfAppContainerToken(&hLowBoxToken, hCPHandle, &SecurityCapabilities);
+	DuplicateHandle(GetCurrentProcess(), GetCurrentProcessToken(), GetCurrentProcess(), &hRealCPHandle, NULL, false, DUPLICATE_SAME_ACCESS);
+	SecurityCapabilities = { pAppContainerSID, CapabilitiesList, 3 ,0 };
+	CreateSelfAppContainerToken(&hLowBoxToken, hRealCPHandle, &SecurityCapabilities);
 	//HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
 	//if (hNtdll == NULL) {
 	//	std::cout << "Get ntdll failed" << std::endl;
@@ -227,5 +539,5 @@ int main() {
 	//std::wcout << (WCHAR*)wszSIDPtr << std::endl;
 	//if(wszSIDPtr != nullptr)
 	//	LocalFree(wszSIDPtr);
-	//return 0;
+	return 0;
 }
