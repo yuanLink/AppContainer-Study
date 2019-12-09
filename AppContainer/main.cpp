@@ -431,12 +431,12 @@ NTSTATUS CreateSelfAppContainerToken(
 	status = PFNNtCreateLowBoxToken(
 		TokenHandle,
 		ExistingTokenHandle,
-		MAXIMUM_ALLOWED,
+		TOKEN_ALL_ACCESS,
 		&ObjAttr,
 		SecurityCapabilities->AppContainerSid,
 		SecurityCapabilities->CapabilityCount,
 		SecurityCapabilities->Capabilities,
-		0,
+		5,
 		HandleList
 	);
 
@@ -477,9 +477,12 @@ int main() {
 	}
 	HANDLE hLowBoxToken = nullptr;
 	HANDLE hCPHandle = GetCurrentProcessToken();
-	HANDLE hRealCPHandle = nullptr;
+	HANDLE hCurrentProcess = GetCurrentProcess();
+	HANDLE hRealCurrentProcess = nullptr, hRealCPHandle = nullptr;
 	SECURITY_CAPABILITIES SecurityCapabilities;
 	SID_AND_ATTRIBUTES CapabilitiesList[3];
+
+	WCHAR lpApplicationName[] = L"C:\\Windows\\System32\\cmd.exe";
 	for (int i = 0; i < sizeof(capabilitiyTypeList) / sizeof(WELL_KNOWN_SID_TYPE); i++)
 	{
 		DWORD dwSIDSize = SECURITY_MAX_SID_SIZE;
@@ -493,7 +496,7 @@ int main() {
 		}
 	}
 
-	WCHAR wszAppContainerName[] = L"TestLowBox12";
+	WCHAR wszAppContainerName[] = L"TestLowBox123";
 	PSID pAppContainerSID = nullptr;
 	DWORD retValue = 0;
 	retValue = CreateAppContainerProfile(
@@ -511,9 +514,39 @@ int main() {
 			return -1;
 		}
 	}
-	DuplicateHandle(GetCurrentProcess(), GetCurrentProcessToken(), GetCurrentProcess(), &hRealCPHandle, NULL, false, DUPLICATE_SAME_ACCESS);
+	bool bOpenSuccess = OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hRealCPHandle);
 	SecurityCapabilities = { pAppContainerSID, CapabilitiesList, 3 ,0 };
 	CreateSelfAppContainerToken(&hLowBoxToken, hRealCPHandle, &SecurityCapabilities);
+	STARTUPINFOEX StartupInfoEx = { 0 };
+	PROCESS_INFORMATION ProcessInfo = { 0 };
+	StartupInfoEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
+
+	SIZE_T cbAttributeListSize = 0;
+	InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
+	StartupInfoEx.lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize);
+	if (InitializeProcThreadAttributeList(StartupInfoEx.lpAttributeList, 3, 0, &cbAttributeListSize))
+	{
+		if (UpdateProcThreadAttribute(
+			StartupInfoEx.lpAttributeList,
+			0,
+			PROC_THREAD_ATTRIBUTE_SECURITY_CAPABILITIES,
+			&SecurityCapabilities,
+			sizeof(SecurityCapabilities),
+			NULL,
+			NULL))
+		{
+			if (CreateProcessAsUserW(
+				hLowBoxToken, lpApplicationName, NULL, nullptr, nullptr, FALSE,
+				EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
+				NULL, NULL, (LPSTARTUPINFOW)&StartupInfoEx, &ProcessInfo))
+			{
+				std::cout << "Create Process success!" << std::endl;
+			}
+			DeleteProcThreadAttributeList(StartupInfoEx.lpAttributeList);
+		}
+	}
+	FreeSid(pAppContainerSID);
+	
 	//HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
 	//if (hNtdll == NULL) {
 	//	std::cout << "Get ntdll failed" << std::endl;
