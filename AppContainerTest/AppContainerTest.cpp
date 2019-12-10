@@ -120,11 +120,39 @@ BOOL ChangeAppContainerSD(PSID AppContainerSID, DWORD dwSessionID) {
 	// \Sessions\%ld\AppContainerNamedObjects\{AppContainerSID}
 	UNICODE_STRING usSApp;
 	WCHAR Buffer[MAX_PATH*2];
+	LPWSTR wszTokenSID = nullptr;
+	OBJECT_ATTRIBUTES ObjAttr;
+	HANDLE hAppContainerRootDir = nullptr;
+	NTSTATUS status = 0;
+	ConvertSidToStringSidW(AppContainerSID, &wszTokenSID);
+	if (wszTokenSID == nullptr) {
+		std::cout << "Convert SID failed.." << std::endl;
+		goto CHANGEEND;
+	}
 	// Query Session number
-	
+	wsprintf(Buffer, L"\\Session\\%ld\\AppContainerNamedObjects\\%S", dwSessionID, wszTokenSID);
 	//[TODO] Create the Session path and check if the permission could be changed
-	PFNRtlInitUnicodeString(&usSApp, L"\\Session\\");
+	PFNRtlInitUnicodeString(&usSApp, Buffer);
 
+	InitializeObjectAttributes(&ObjAttr, &usSApp, NULL, 0, 0);
+	status = PFNNtOpenDirectoryObject(
+		&hAppContainerRootDir,
+		DIRECTORY_QUERY | DIRECTORY_TRAVERSE |
+		DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+		&ObjAttr
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "NtOpenDirectoryObject failed with error :" << std::hex << status << std::endl;
+		goto CHANGEEND;
+	}
+
+
+	// now we will try to get the  
+	// function NtSetSecurityObject will try to set the handle with target dacl
+	// concern:maybe we could use SetKernelObjectIntegrityLevel to set the ACL?
+CHANGEEND:
+	if (wszTokenSID == nullptr)
+		LocalFree(wszTokenSID);
 
 }
 int main()
