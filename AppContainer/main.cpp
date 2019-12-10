@@ -1,5 +1,6 @@
 #include "SelfWinNT.h"
 #include "AppContainer.h"
+#include "CommHeader.h"
 #include <strsafe.h>
 #include <sddl.h>
 #include <UserEnv.h>
@@ -279,12 +280,15 @@ NTSTATUS CreateSelfAppContainerToken(
 
 	// 1. Creaet AppContaier Directory Object
 	// Create AppContainer Directory Object
-	InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, pDirectorySD);
+	// InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, pDirectorySD);
+	InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, NULL);
+	// InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_CASE_INSENSITIVE | OBJ_OPENIF, hAppContainerNamedObjects, NULL);
 
 	status = PFNNtCreateDirectoryObjectEx(
 		&HandleList[AppContainerHandleList::RootDirectory],
 		DIRECTORY_QUERY | DIRECTORY_TRAVERSE |
 		DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+		//DIRECTORY_ALL_ACCESS,
 		&ObjAttr,
 		hBaseNamedObjects,
 		1
@@ -427,7 +431,12 @@ NTSTATUS CreateSelfAppContainerToken(
 
 	// Create AppContainer Low Box Token
 	InitializeObjectAttributes(&ObjAttr, NULL, NULL, 0, 0);
-
+	//HandleList[AppContainerHandleList::RootDirectory] = NULL;
+	//HandleList[AppContainerHandleList::NamedPipe] = NULL;
+	//HandleList[AppContainerHandleList::LocalSymbolicLink] = NULL;
+	//HandleList[AppContainerHandleList::GlobalSymbolicLink] = NULL;
+	//HandleList[AppContainerHandleList::RpcDirectory] = NULL;
+	//HandleList[AppContainerHandleList::SessionSymbolicLink] = NULL;
 	status = PFNNtCreateLowBoxToken(
 		TokenHandle,
 		ExistingTokenHandle,
@@ -436,7 +445,7 @@ NTSTATUS CreateSelfAppContainerToken(
 		SecurityCapabilities->AppContainerSid,
 		SecurityCapabilities->CapabilityCount,
 		SecurityCapabilities->Capabilities,
-		5,
+		1,
 		HandleList
 	);
 
@@ -470,8 +479,14 @@ WELL_KNOWN_SID_TYPE capabilitiyTypeList[] =
 		WinCapabilityPrivateNetworkClientServerSid,
 };
 
-int main() {
+int wmain(int argc, WCHAR* argv[]) {
 
+	HANDLE hEvent = NULL;
+	hEvent = CreateEvent(NULL, false, false, COMMONOBJECT);
+	if (hEvent == NULL) {
+		std::cout << "The Common event create failed" << std::endl;
+		return -1;
+	}
 	if (!InitEssantialFunciton()) {
 		return -1;
 	}
@@ -483,6 +498,7 @@ int main() {
 	SID_AND_ATTRIBUTES CapabilitiesList[3];
 
 	WCHAR lpApplicationName[] = L"C:\\Windows\\System32\\cmd.exe";
+	WCHAR* lpAppBuffer = nullptr;
 	for (int i = 0; i < sizeof(capabilitiyTypeList) / sizeof(WELL_KNOWN_SID_TYPE); i++)
 	{
 		DWORD dwSIDSize = SECURITY_MAX_SID_SIZE;
@@ -496,7 +512,7 @@ int main() {
 		}
 	}
 
-	WCHAR wszAppContainerName[] = L"TestLowBox123";
+	WCHAR wszAppContainerName[] = L"TestLowBox12456";
 	PSID pAppContainerSID = nullptr;
 	DWORD retValue = 0;
 	retValue = CreateAppContainerProfile(
@@ -516,16 +532,24 @@ int main() {
 	}
 	bool bOpenSuccess = OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &hRealCPHandle);
 	SecurityCapabilities = { pAppContainerSID, CapabilitiesList, 3 ,0 };
+	// Here we will create appcontainer token
 	CreateSelfAppContainerToken(&hLowBoxToken, hRealCPHandle, &SecurityCapabilities);
+	if (hLowBoxToken == NULL) {
+		std::cout << "Create LowBox Token failed" << std::endl;
+		return -1;
+	}
+	// try to create a process with token
 	STARTUPINFOEX StartupInfoEx = { 0 };
 	PROCESS_INFORMATION ProcessInfo = { 0 };
 	StartupInfoEx.StartupInfo.cb = sizeof(STARTUPINFOEXW);
 
 	SIZE_T cbAttributeListSize = 0;
 	InitializeProcThreadAttributeList(NULL, 3, 0, &cbAttributeListSize);
-	StartupInfoEx.lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, cbAttributeListSize);
+	StartupInfoEx.lpAttributeList = (PPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbAttributeListSize);
+	// Initialize thread
 	if (InitializeProcThreadAttributeList(StartupInfoEx.lpAttributeList, 3, 0, &cbAttributeListSize))
 	{
+		// Update startup to generate app container process
 		if (UpdateProcThreadAttribute(
 			StartupInfoEx.lpAttributeList,
 			0,
@@ -535,9 +559,17 @@ int main() {
 			NULL,
 			NULL))
 		{
+			lpAppBuffer = reinterpret_cast<WCHAR*>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, MAX_PATH * 2));
+			if (argc >= 2) {
+				wcscpy_s(lpAppBuffer, MAX_PATH, argv[1]);
+			}
+			else {
+				wcscpy_s(lpAppBuffer, MAX_PATH, lpApplicationName);
+			}
 			if (CreateProcessAsUserW(
-				hLowBoxToken, lpApplicationName, NULL, nullptr, nullptr, FALSE,
-				EXTENDED_STARTUPINFO_PRESENT | CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
+				hLowBoxToken, lpAppBuffer, NULL, nullptr, nullptr, FALSE,
+				EXTENDED_STARTUPINFO_PRESENT | 
+				CREATE_UNICODE_ENVIRONMENT ,
 				NULL, NULL, (LPSTARTUPINFOW)&StartupInfoEx, &ProcessInfo))
 			{
 				std::cout << "Create Process success!" << std::endl;
@@ -546,7 +578,10 @@ int main() {
 		}
 	}
 	FreeSid(pAppContainerSID);
-	
+	HeapFree(GetProcessHeap(), NULL, lpAppBuffer);
+	CloseHandle(hEvent);
+	//Sleep(100000);
+	std::cout << "Wellll" << std::endl;
 	//HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
 	//if (hNtdll == NULL) {
 	//	std::cout << "Get ntdll failed" << std::endl;
