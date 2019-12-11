@@ -54,10 +54,10 @@ _猜测理由：因为没有`Add Object`的话，可能_
 
 ## TODOList
 
- * [*] BuildAppContainerSecurityDescriptor的完成
- * [*] SetKernelObjectIntegrityLevel的完成
- * [*] NtCreateSymbolicLinkObject的使用（指不创建global link)
- * [*] 对进程中AppContainer SID修改的研究
+ * [x] BuildAppContainerSecurityDescriptor的完成
+ * [x] SetKernelObjectIntegrityLevel的完成
+ * [x] NtCreateSymbolicLinkObject的使用（指不创建global link)
+ * [x] 对进程中AppContainer SID修改的研究
  * [ ] 跨进程对AppContainer SID修改的研究
  * [ ] 使用`Impersonate`尝试访问Object
 
