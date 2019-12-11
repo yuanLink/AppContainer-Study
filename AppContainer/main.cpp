@@ -119,6 +119,24 @@ const enum AppContainerHandleList
 	NamedPipe				// Named pipe symblic
 };
 
+BOOL CreateMyDACL(SECURITY_ATTRIBUTES * pSA) {
+	// Create the Security Descriptor with SD format string
+	WCHAR szSD[] = L"D:"					// DACL
+		L"(A;OICI;GRGWGX;;;AU)"				// generic read/write/execute to authenticated user
+		L"(A;OICI;GAGWGX;;;BA)"				// generic read/write/execute to built-in administrator
+		L"(A;OICI;GAGWGX;;;s-1-15-2-1)"		// generic read/write/execute to ALL PACKAGES
+		L"(A;OICI;GAGWGX;;;SY)";				// generic read/write/execute to system
+
+	if (NULL == pSA)
+		return false;
+
+	return ConvertStringSecurityDescriptorToSecurityDescriptor(
+			szSD, SDDL_REVISION_1,
+			&(pSA->lpSecurityDescriptor),
+			NULL
+			);
+}	
+
 NTSTATUS CreateSelfAppContainerToken(
 	_Out_ PHANDLE TokenHandle,
 	_In_ HANDLE ExistingTokenHandle,
@@ -280,8 +298,9 @@ NTSTATUS CreateSelfAppContainerToken(
 
 	// 1. Creaet AppContaier Directory Object
 	// Create AppContainer Directory Object
-	// InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, pDirectorySD);
-	InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, NULL);
+	// Here is root cause: because the \\Session\\%ld\\AppContainerNamedObjects\\AppContainerSID have not SD, 
+	InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, pDirectorySD);
+	// InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_INHERIT | OBJ_OPENIF, hAppContainerNamedObjects, NULL);
 	// InitializeObjectAttributes(&ObjAttr, &usAppContainerSID, OBJ_CASE_INSENSITIVE | OBJ_OPENIF, hAppContainerNamedObjects, NULL);
 
 	status = PFNNtCreateDirectoryObjectEx(
@@ -445,7 +464,7 @@ NTSTATUS CreateSelfAppContainerToken(
 		SecurityCapabilities->AppContainerSid,
 		SecurityCapabilities->CapabilityCount,
 		SecurityCapabilities->Capabilities,
-		1,
+		5,
 		HandleList
 	);
 
@@ -482,7 +501,15 @@ WELL_KNOWN_SID_TYPE capabilitiyTypeList[] =
 int wmain(int argc, WCHAR* argv[]) {
 
 	HANDLE hEvent = NULL;
-	hEvent = CreateEvent(NULL, false, false, COMMONOBJECT);
+	SECURITY_ATTRIBUTES sa;
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = FALSE;
+	if (!CreateMyDACL(&sa)) {
+		std::cout << "Create the security descriptor failed" << std::endl;
+		return -1;
+	}
+
+	hEvent = CreateEvent(&sa, false, false, COMMONOBJECT);
 	if (hEvent == NULL) {
 		std::cout << "The Common event create failed" << std::endl;
 		return -1;
@@ -579,7 +606,9 @@ int wmain(int argc, WCHAR* argv[]) {
 	}
 	FreeSid(pAppContainerSID);
 	HeapFree(GetProcessHeap(), NULL, lpAppBuffer);
+	Sleep(10000);
 	CloseHandle(hEvent);
+	LocalFree(sa.lpSecurityDescriptor);
 	//Sleep(100000);
 	std::cout << "Wellll" << std::endl;
 	//HMODULE hNtdll = GetModuleHandle(L"ntdll.dll");
