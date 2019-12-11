@@ -137,7 +137,8 @@ NTSTATUS WINAPI BuildAppContainerSecurityDescriptor(
 	}
 
 	// add sandbox ACE(directory) for new ACL
-	status = PFNRtlAddAccessAllowedAce(
+	// HERE IS THE ROOT CAUSE THAT GLOBAL EVENT OBJECT COULD NOT BE OPENED
+	status = AddAccessAllowedAce(
 		pNewAcl,
 		pAcl->AclRevision,
 		DIRECTORY_ALL_ACCESS,

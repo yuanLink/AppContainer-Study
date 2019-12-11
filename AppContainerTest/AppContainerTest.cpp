@@ -130,8 +130,10 @@ BOOL ChangeAppContainerSD(PSID AppContainerSID, DWORD dwSessionID) {
 		goto CHANGEEND;
 	}
 	// Query Session number
-	wsprintf(Buffer, L"\\Session\\%ld\\AppContainerNamedObjects\\%S", dwSessionID, wszTokenSID);
-	//[TODO] Create the Session path and check if the permission could be changed
+	wsprintf(Buffer, L"\\Sessions\\%ld\\AppContainerNamedObjects", dwSessionID);
+	std::wcout << L"Now we get path is " << Buffer << std::endl;
+	// In fact, here will failed. Because AppContainer have no permission for this path,
+	// So it could not try to search path even from root.
 	PFNRtlInitUnicodeString(&usSApp, Buffer);
 
 	InitializeObjectAttributes(&ObjAttr, &usSApp, NULL, 0, 0);
@@ -145,15 +147,12 @@ BOOL ChangeAppContainerSD(PSID AppContainerSID, DWORD dwSessionID) {
 		std::cout << "NtOpenDirectoryObject failed with error :" << std::hex << status << std::endl;
 		goto CHANGEEND;
 	}
+	std::cout << "Open the Root Directory handle:" << hAppContainerRootDir << std::endl;
 
-
-	// now we will try to get the  
-	// function NtSetSecurityObject will try to set the handle with target dacl
-	// concern:maybe we could use SetKernelObjectIntegrityLevel to set the ACL?
 CHANGEEND:
 	if (wszTokenSID == nullptr)
 		LocalFree(wszTokenSID);
-
+	return status == 0;
 }
 int main()
 {
@@ -189,7 +188,7 @@ int main()
 	//LocalFree(tkAppContainer);
 	HeapFree(GetProcessHeap(), NULL, tkAppContainer);
 	LocalFree(wszTokenSID);
-	Sleep(5000);
+	Sleep(10000);
 	//system("pause");
 	return 0;
 }

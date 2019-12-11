@@ -12,6 +12,7 @@
 #pragma comment(lib,"user32")
 #pragma comment(lib,"Advapi32")
 #pragma comment(lib,"Ole32")
+#pragma comment(lib,"Advapi32.lib")
 
 decltype(NtOpenDirectoryObject) *PFNNtOpenDirectoryObject;
 decltype(NtQueryInformationToken) *PFNNtQueryInformationToken;
@@ -464,7 +465,7 @@ NTSTATUS CreateSelfAppContainerToken(
 		SecurityCapabilities->AppContainerSid,
 		SecurityCapabilities->CapabilityCount,
 		SecurityCapabilities->Capabilities,
-		5,
+		1,
 		HandleList
 	);
 
