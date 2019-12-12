@@ -16,7 +16,112 @@ Q:
 Q: AppContainer的进程的特征在哪儿？具体的进程Token和普通的进程Token的区别是啥？
 
 Q: 如何查看具体的进程Token
+A: 
+user-mode:
+使用windbg调试指定进程，然后键入
+```
+!token
+```
+kernel-mode:
+使用windbg调试（可以lkd），然后用
+```
+!process 0 0 <name>
+```
+找到进程信息
+```
+lkd> !process 0 0 Calculator.exe
+PROCESS ffff9c0cd4b7d080
+    SessionId: 1  Cid: 31c4    Peb: 24d7912000  ParentCid: 028c
+    DirBase: 23ac00002  ObjectTable: ffffae07b1259700  HandleCount: 525.
+    Image: Calculator.exe
 
+```
+然后继续用这个指令，打印进程详细信息:
+```
+!process PROCESS-address 1
+
+lkd> !process ffff9c0cd4b7d080 1
+PROCESS ffff9c0cd4b7d080
+    SessionId: 1  Cid: 31c4    Peb: 24d7912000  ParentCid: 028c
+    DirBase: 23ac00002  ObjectTable: ffffae07b1259700  HandleCount: 509.
+    Image: Calculator.exe
+    VadRoot ffff9c0cd372a750 Vads 214 Clone 0 Private 4330. Modified 4267. Locked 1554.
+    DeviceMap ffffae07ae54e550
+    Token                             ffffae07a6184050
+    ElapsedTime                       18:23:18.156
+    UserTime                          00:00:00.000
+    KernelTime                        00:00:00.000
+    QuotaPoolUsage[PagedPool]         683544
+    QuotaPoolUsage[NonPagedPool]      29552
+    Working Set Sizes (now,min,max)  (14175, 50, 345) (56700KB, 200KB, 1380KB)
+    PeakWorkingSetSize                14813
+    VirtualSize                       445 Mb
+    PeakVirtualSize                   453 Mb
+    PageFaultCount                    22835
+    MemoryPriority                    BACKGROUND
+    BasePriority                      8
+    CommitCharge                      5411
+    Job                               ffff9c0cd452a830
+```
+找到token之后，就可以用
+```
+dt nt!_token
+```
+进行查看:
+```
+
+lkd> dt nt!_token ffffae07a6184050
+   +0x000 TokenSource      : _TOKEN_SOURCE
+   +0x010 TokenId          : _LUID
+   +0x018 AuthenticationId : _LUID
+   +0x020 ParentTokenId    : _LUID
+   +0x028 ExpirationTime   : _LARGE_INTEGER 0x7fffffff`ffffffff
+   +0x030 TokenLock        : 0xffff9c0c`d0ee9450 _ERESOURCE
+   +0x038 ModifiedId       : _LUID
+   +0x040 Privileges       : _SEP_TOKEN_PRIVILEGES
+   +0x058 AuditPolicy      : _SEP_AUDIT_POLICY
+   +0x078 SessionId        : 1
+   +0x07c UserAndGroupCount : 0x7c
+   +0x080 RestrictedSidCount : 0
+   +0x084 VariableLength   : 0x14a8
+   +0x088 DynamicCharged   : 0x1000
+   +0x08c DynamicAvailable : 0
+   +0x090 DefaultOwnerIndex : 0
+   +0x098 UserAndGroups    : 0xffffae07`a61844e0 _SID_AND_ATTRIBUTES
+   +0x0a0 RestrictedSids   : (null) 
+   +0x0a8 PrimaryGroup     : 0xffffae07`9ec4b360 Void
+   +0x0b0 DynamicPart      : 0xffffae07`9ec4b360  -> 0x501
+   +0x0b8 DefaultDacl      : 0xffffae07`9ec4b37c _ACL
+   +0x0c0 TokenType        : 1 ( TokenPrimary )
+   +0x0c4 ImpersonationLevel : 0 ( SecurityAnonymous )
+   +0x0c8 TokenFlags       : 0x4a00
+   +0x0cc TokenInUse       : 0x1 ''
+   +0x0d0 IntegrityLevelIndex : 0x7b
+   +0x0d4 MandatoryPolicy  : 1
+   +0x0d8 LogonSession     : 0xffffae07`a401a6e0 _SEP_LOGON_SESSION_REFERENCES
+   +0x0e0 OriginatingLogonSession : _LUID
+   +0x0e8 SidHash          : _SID_AND_ATTRIBUTES_HASH
+   +0x1f8 RestrictedSidHash : _SID_AND_ATTRIBUTES_HASH
+   +0x308 pSecurityAttributes : 0xffffae07`ae5431f0 _AUTHZBASEP_SECURITY_ATTRIBUTES_INFORMATION
+   +0x310 Package          : 0xffffae07`b0b64300 Void
+   +0x318 Capabilities     : 0xffffae07`abbdb850 _SID_AND_ATTRIBUTES
+   +0x320 CapabilityCount  : 3
+   +0x328 CapabilitiesHash : _SID_AND_ATTRIBUTES_HASH
+   +0x438 LowboxNumberEntry : 0xffffae07`aafd31f0 _SEP_LOWBOX_NUMBER_ENTRY
+   +0x440 LowboxHandlesEntry : 0xffffae07`9b61d230 _SEP_CACHED_HANDLES_ENTRY
+   +0x448 pClaimAttributes : (null) 
+   +0x450 TrustLevelSid    : (null) 
+   +0x458 TrustLinkedToken : (null) 
+   +0x460 IntegrityLevelSidValue : (null) 
+   +0x468 TokenSidValues   : (null) 
+   +0x470 IndexEntry       : 0xffffae07`9436dd80 _SEP_LUID_TO_INDEX_MAP_ENTRY
+   +0x478 DiagnosticInfo   : (null) 
+   +0x480 BnoIsolationHandlesEntry : (null) 
+   +0x488 SessionObject    : 0xffff9c0c`cbddc670 Void
+   +0x490 VariablePart     : 0xffffae07`a6184ca0
+```
+
+Q: 如何确定HANDLE对应的对象到底是啥呢？
 ### CHAPTER1 LIMIT ACCESS FOR GLOBAL OBJECT
 Q:
 一个APPContainer进程能够访问的全局对象是有限的？这是怎么回事？
