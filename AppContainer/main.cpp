@@ -5,6 +5,7 @@
 #include <sddl.h>
 #include <UserEnv.h>
 #include <Shlwapi.h>
+#include <AclAPI.h>
 
 #pragma comment(lib,"Userenv")
 #pragma comment(lib,"Shlwapi")
@@ -499,6 +500,114 @@ WELL_KNOWN_SID_TYPE capabilitiyTypeList[] =
 		WinCapabilityPrivateNetworkClientServerSid,
 };
 
+bool ChangeAppContainerSecurityDescriptor(HANDLE hChild) {
+	UNICODE_STRING usSApp;
+	WCHAR Buffer[MAX_PATH * 2];
+	LPWSTR wszAppContainerSID = nullptr;
+	OBJECT_ATTRIBUTES ObjAttr;
+	HANDLE hAppContainerRootDir = nullptr;
+	NTSTATUS status = 0;
+	HANDLE hToken = nullptr;
+	DWORD dwRetLength, dwRetStatus ,cbNewACLSize;
+	_TOKEN_APPCONTAINER_INFORMATION * tkAppContainer;
+	DWORD dwSessionID = 0;
+	PACL pOldACL = nullptr, pNewACL = nullptr;
+	PACCESS_ALLOWED_ACE pTempACE;
+	PSECURITY_DESCRIPTOR  pOldSD = nullptr;
+
+	OpenProcessToken(hChild, TOKEN_ALL_ACCESS, &hToken);
+	GetTokenInformation(hToken, TokenAppContainerSid, NULL, NULL, &dwRetLength);
+	tkAppContainer = reinterpret_cast<_TOKEN_APPCONTAINER_INFORMATION *>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwRetLength));
+	if (!GetTokenInformation(hToken, TokenAppContainerSid, tkAppContainer, dwRetLength, &dwRetLength)) {
+		std::cout << "Get User Token faield with error code 0x:" << std::hex << GetLastError() << std::endl;
+		goto CHANGEEND;
+	}
+	if (!GetTokenInformation(hToken, TokenSessionId, &dwSessionID, sizeof(DWORD), &dwRetLength)) {
+		std::cout << "Get Session ID faield with error code 0x:" << std::hex << GetLastError() << std::endl;
+		goto CHANGEEND;
+	}
+	ConvertSidToStringSidW(tkAppContainer->TokenAppContainer, &wszAppContainerSID);
+	if (wszAppContainerSID == nullptr) {
+		std::cout << "Convert SID failed.." << std::endl;
+		goto CHANGEEND;
+	}
+	// Query Session number
+
+	wsprintf(Buffer, L"\\Sessions\\%d\\AppContainerNamedObjects\\%ws", dwSessionID, wszAppContainerSID);
+	std::wcout << L"Now we get path is " << Buffer << std::endl;
+	PFNRtlInitUnicodeString(&usSApp, Buffer);
+
+	InitializeObjectAttributes(&ObjAttr, &usSApp, NULL, 0, 0);
+	status = PFNNtOpenDirectoryObject(
+		&hAppContainerRootDir,
+		DIRECTORY_QUERY | DIRECTORY_TRAVERSE |
+		DIRECTORY_CREATE_OBJECT | DIRECTORY_CREATE_SUBDIRECTORY,
+		&ObjAttr
+	);
+	if (!NT_SUCCESS(status)) {
+		std::cout << "NtOpenDirectoryObject failed with error :" << std::hex << status << std::endl;
+		goto CHANGEEND;
+	}
+	std::cout << "Open the Root Directory handle:" << hAppContainerRootDir << std::endl;
+
+	dwRetStatus = GetSecurityInfo(
+		hAppContainerRootDir,
+		SE_FILE_OBJECT,
+		DACL_SECURITY_INFORMATION,
+		NULL, NULL,
+		&pOldACL, NULL,
+		&pOldSD
+	);
+	if (dwRetStatus != ERROR_SUCCESS) {
+		std::cout << "Get security info failed with error code :" << std::hex << dwRetStatus << std::endl;
+		goto CHANGEEND;
+	}
+
+	cbNewACLSize = pOldACL->AclSize;
+	cbNewACLSize += GetLengthSid(tkAppContainer->TokenAppContainer);
+	cbNewACLSize += sizeof(ACCESS_ALLOWED_ACE);
+	pNewACL = reinterpret_cast<PACL>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, cbNewACLSize));
+	InitializeAcl(pNewACL, cbNewACLSize, pOldACL->AclRevision);
+	for (ULONG i = 0; NT_SUCCESS(PFNRtlGetAce(pOldACL, i, (PVOID*)&pTempACE)); i++) {
+		// add ACE for new ACL
+		AddAce(pNewACL, pOldACL->AclRevision, i, pTempACE, pTempACE->Header.AceSize);
+	}
+	// add new ACE to root directory
+	if (!AddAccessAllowedAce(
+		pNewACL,
+		pOldACL->AclRevision,
+		DIRECTORY_ALL_ACCESS,
+		tkAppContainer->TokenAppContainer
+	)) {
+		std::cout << "AddAccessAllowedAce failed with error :" << std::hex << GetLastError() << std::endl;
+		goto CHANGEEND;
+	}
+	SetSecurityInfo(
+		hAppContainerRootDir,
+		SE_FILE_OBJECT,
+		DACL_SECURITY_INFORMATION,
+		NULL, NULL,
+		pNewACL,
+		NULL
+	);
+	if (dwRetStatus != ERROR_SUCCESS) {
+		std::cout << "Set security info failed with error code :" << std::hex << dwRetStatus << std::endl;
+		goto CHANGEEND;
+	}
+	//SetSecurityDescriptorDacl()
+	
+	
+CHANGEEND:
+	if (wszAppContainerSID != nullptr)
+		LocalFree(wszAppContainerSID);
+	if (pOldACL != nullptr)
+		LocalFree(pOldACL);
+	if (pOldSD != nullptr)
+		LocalFree(pOldSD);
+	if (tkAppContainer != nullptr)
+		HeapFree(GetProcessHeap(), NULL, tkAppContainer);
+	return status == 0;
+}
 int wmain(int argc, WCHAR* argv[]) {
 
 	HANDLE hEvent = NULL;
@@ -605,6 +714,9 @@ int wmain(int argc, WCHAR* argv[]) {
 			DeleteProcThreadAttributeList(StartupInfoEx.lpAttributeList);
 		}
 	}
+	Sleep(3000);
+	HANDLE hChild = ProcessInfo.hProcess;
+	ChangeAppContainerSecurityDescriptor(hChild);
 	FreeSid(pAppContainerSID);
 	HeapFree(GetProcessHeap(), NULL, lpAppBuffer);
 	Sleep(10000);
