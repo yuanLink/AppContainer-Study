@@ -178,7 +178,7 @@ int main()
 			return -1;
 	}
 	
-	ChangeAppContainerSD(tkAppContainer->TokenAppContainer, dwSessionID);
+	//ChangeAppContainerSD(tkAppContainer->TokenAppContainer, dwSessionID);
 	ConvertSidToStringSidW(tkAppContainer->TokenAppContainer, &wszTokenSID);
 	if(wszTokenSID != nullptr)
 		std::wcout << wszTokenSID << std::endl;
@@ -188,6 +188,10 @@ int main()
 	//LocalFree(tkAppContainer);
 	HeapFree(GetProcessHeap(), NULL, tkAppContainer);
 	LocalFree(wszTokenSID);
+	Sleep(3000);
+	mEvent = OpenEventW(SYNCHRONIZE | EVENT_MODIFY_STATE, FALSE, COMMONOBJECT);
+	std::cout << "mEvent is :" << std::hex << mEvent << std::endl;
+	std::cout << "GetLastError is :" << std::hex << GetLastError() << std::endl;
 	Sleep(10000);
 	//system("pause");
 	return 0;
