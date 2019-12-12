@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AppContainer", "AppContaine
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AppContainerTest", "AppContainerTest\AppContainerTest.vcxproj", "{15278063-CA9D-4B68-AFF0-83DB61D18C08}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AppContainerTool", "AppContainerTool\AppContainerTool.vcxproj", "{8117D9E8-01A7-4959-972A-2F6B76A6975E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{15278063-CA9D-4B68-AFF0-83DB61D18C08}.Release|x64.Build.0 = Release|x64
 		{15278063-CA9D-4B68-AFF0-83DB61D18C08}.Release|x86.ActiveCfg = Release|Win32
 		{15278063-CA9D-4B68-AFF0-83DB61D18C08}.Release|x86.Build.0 = Release|Win32
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Debug|x64.ActiveCfg = Debug|x64
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Debug|x64.Build.0 = Debug|x64
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Debug|x86.ActiveCfg = Debug|Win32
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Debug|x86.Build.0 = Debug|Win32
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Release|x64.ActiveCfg = Release|x64
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Release|x64.Build.0 = Release|x64
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Release|x86.ActiveCfg = Release|Win32
+		{8117D9E8-01A7-4959-972A-2F6B76A6975E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
