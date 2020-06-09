@@ -123,7 +123,7 @@ lkd> dt nt!_token ffffae07a6184050
 
 Q: 如何确定HANDLE对应的对象到底是啥呢？  
 A: 在[自己的博客](http://showlinkroom.me/2019/04/26/Windows-Via-C-C-note-3/)有提到。这边再记录一下：
-首先我们随便找一个进程距离，找到一个进程的句柄:
+首先我们随便找一个进程，找到一个进程的句柄:
 ```
 1: kd> !handle 94
 PROCESS aed07600  SessionId: 1  Cid: 1b90    Peb: 00451000  ParentCid: 0d24
