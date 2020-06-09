@@ -15,7 +15,7 @@ Q:
 
 Q: AppContainer的进程的特征在哪儿？具体的进程Token和普通的进程Token的区别是啥？
 
-Q: 如何查看具体的进程Token
+Q: 如何查看具体的进程Token  
 A: 
 user-mode:
 使用windbg调试指定进程，然后键入
@@ -121,7 +121,58 @@ lkd> dt nt!_token ffffae07a6184050
    +0x490 VariablePart     : 0xffffae07`a6184ca0
 ```
 
-Q: 如何确定HANDLE对应的对象到底是啥呢？
+Q: 如何确定HANDLE对应的对象到底是啥呢？  
+A: 在[自己的博客](http://showlinkroom.me/2019/04/26/Windows-Via-C-C-note-3/)有提到。这边再记录一下：
+首先我们随便找一个进程距离，找到一个进程的句柄:
+```
+1: kd> !handle 94
+PROCESS aed07600  SessionId: 1  Cid: 1b90    Peb: 00451000  ParentCid: 0d24
+    DirBase: 3ffd35c0  ObjectTable: af3f4540  HandleCount:  38.
+    Image: Exploit.exe
+Handle table at af3f4540 with 38 entries in use
+0094: Object: aed07600  GrantedAccess: 00001400 Entry: 8b83a128
+Object: aed07600  Type: (8639b480) Process
+    ObjectHeader: aed075e8 (new version)
+        HandleCount: 7  PointerCount: 217
+```
+这个句柄94表示的是一个叫做Exploit.exe进程的进程对象。
+```
+0094: Object: aed07600  GrantedAccess: 00001400 Entry: 8b83a128
+Object: aed07600  Type: (8639b480) Process
+    ObjectHeader: aed075e8 (new version)
+                     ^
+                     |
+        这里正是这个对象（object）在内存中的位置
+        HandleCount: 7  PointerCount: 217
+```
+如果我们需要观察这个对象的话，只需要键入:
+```
+1: kd> dt _Object_header aed075e8
+nt!_OBJECT_HEADER
+   +0x000 PointerCount     : 0n217
+   +0x004 HandleCount      : 0n7
+   +0x004 NextToFree       : 0x00000007 Void
+   +0x008 Lock             : _EX_PUSH_LOCK
+   +0x00c TypeIndex        : 0xe1 ''
+   +0x00d TraceFlags       : 0 ''
+   +0x00d DbgRefTrace      : 0y0
+   +0x00d DbgTracePermanent : 0y0
+   +0x00e InfoMask         : 0x88 ''
+   +0x00f Flags            : 0 ''
+   +0x00f NewObject        : 0y0
+   +0x00f KernelObject     : 0y0
+   +0x00f KernelOnlyAccess : 0y0
+   +0x00f ExclusiveObject  : 0y0
+   +0x00f PermanentObject  : 0y0
+   +0x00f DefaultSecurityQuota : 0y0
+   +0x00f SingleHandleEntry : 0y0
+   +0x00f DeletedInline    : 0y0
+   +0x010 ObjectCreateInfo : 0x8d2952c0 _OBJECT_CREATE_INFORMATION
+   +0x010 QuotaBlockCharged : 0x8d2952c0 Void
+   +0x014 SecurityDescriptor : 0xa7a77596 Void
+   +0x018 Body             : _QUAD
+```
+并且用户态是可以查询到这个地址的，通过调用神奇API`NtQuerySystemInformation`里面的`SystemHandleInformation`即可查询到
 ### CHAPTER1 LIMIT ACCESS FOR GLOBAL OBJECT
 Q:
 一个APPContainer进程能够访问的全局对象是有限的？这是怎么回事？
@@ -146,10 +197,10 @@ NTSTATUS NtCreateLowBoxToken(
 ```
 这个API会创建一个`LowBox Token`，这个token 是一个低权限的token，可以作为`primary user token`使用。在`CreateProcessAsUser`的时候可以使用，从而创建一个创建受到限制的进程（也就是APPContainer）。
 
-Q: 不能访问全局的原因找到了，是因为创建Root Directory的时候，没有带有任何安全描述符。创建对象的时候没有安全描述符会发生什么呢？
+Q: 不能访问全局的原因找到了，是因为创建Root Directory的时候，没有带有任何安全描述符。创建对象的时候没有安全描述符会发生什么呢？  
 A: 这个似乎找到答案了。对于通常的进程来说，一个`NULL`的DACL意味着**任意访问权限**，而对于AppContainer进程来说，这就意味着**全部Deny**。换句话说，AppContainer进程中**只有显示定义了Allow的权限才能够被允许执行**。
 
-Q: 那具体是哪个安全描述符导致的问题呢？
+Q: 那具体是哪个安全描述符导致的问题呢？  
 目前已近确定了，是`\\Sessions\{sessionID}\AppContainerNamedObjects\{AppContainerSID}`这个对象下的**PACKAGE SID**这个Owner的以下几个权限没有出现  
 ![Owner](./img/img00.png)  
 ![权限](./img/img01.png)  
